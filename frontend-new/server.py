@@ -663,9 +663,27 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(json_str.encode('utf-8'))
 
 if __name__ == '__main__':
-    print(f"Starting Hospital Scheduling Server on http://0.0.0.0:{PORT}")
     socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), CustomHandler) as httpd:
+    httpd = None
+    target_port = PORT
+    candidate_ports = [PORT] if "PORT" in os.environ else [PORT, 8081, 8082, 3000, 5000]
+
+    for p in candidate_ports:
+        try:
+            httpd = socketserver.TCPServer(("", p), CustomHandler)
+            target_port = p
+            break
+        except (OSError, PermissionError):
+            if "PORT" in os.environ:
+                raise
+            continue
+
+    if httpd is None:
+        print("Error: Could not bind to any available port.")
+        sys.exit(1)
+
+    print(f"Starting Hospital Scheduling Server on http://localhost:{target_port}")
+    with httpd:
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
