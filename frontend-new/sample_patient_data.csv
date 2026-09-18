@@ -1,0 +1,16 @@
+appointment_id,patient_name,specialty,date,time,lead_time_days,previous_noshows,reminder_status,age_band
+APT-2001,Jonathan Vance,Cardiology,2026-09-28,09:30 AM,22,3,Not Sent,55-64
+APT-2002,Maria Garcia,Neurology,2026-09-28,10:15 AM,14,1,Sent (Pending Resp),45-54
+APT-2003,Liam O'Connor,Orthopedics,2026-09-28,11:00 AM,5,0,Confirmed,35-44
+APT-2004,Chloe Zhao,Dermatology,2026-09-28,01:45 PM,28,2,Not Sent,25-34
+APT-2005,Hassan Al-Mansoor,Endocrinology,2026-09-29,08:30 AM,3,0,Confirmed,65+
+APT-2006,Rachel Green,Pediatrics,2026-09-29,09:15 AM,1,0,Confirmed,Parent of 0-17
+APT-2007,Benjamin Wright,Cardiology,2026-09-29,10:30 AM,19,4,Not Sent,65+
+APT-2008,Siddharth Patel,Neurology,2026-09-29,11:45 AM,12,0,Sent (Pending Resp),35-44
+APT-2009,Claire Dupont,Orthopedics,2026-09-30,02:15 PM,35,3,Not Sent,45-54
+APT-2010,Kofi Mensah,Cardiology,2026-09-30,03:00 PM,7,0,Confirmed,25-34
+APT-2011,Emma Watson,Dermatology,2026-09-30,03:45 PM,16,1,Not Sent,18-24
+APT-2012,Tariq Mahmood,Endocrinology,2026-10-01,09:00 AM,4,0,Confirmed,55-64
+APT-2013,Grace Hopper,Neurology,2026-10-01,10:00 AM,21,2,Not Sent,65+
+APT-2014,Carlos Santana,Cardiology,2026-10-01,11:30 AM,11,1,Sent (Pending Resp),45-54
+APT-2015,Aisha Abdullah,Pediatrics,2026-10-01,02:00 PM,2,0,Confirmed,Parent of 0-17

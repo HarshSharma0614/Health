@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraCare | Smart Hospital Waitlist & No-Show Predictor</title>
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- TOP COMMAND DOCK & GLASS HEADER -->
+  <header class="top-header">
+    <div class="header-container">
+      <div class="brand-section">
+        <div class="brand-icon">
+          <i class="ph-fill ph-heartbeat"></i>
+        </div>
+        <div class="brand-title">
+          <h1>AuraCare Predictor</h1>
+          <div class="brand-subtitle">Every empty slot is a missed opportunity for care.</div>
+        </div>
+      </div>
+
+      <!-- Elevated Floating Navigation Dock -->
+      <nav class="nav-dock">
+        <button class="nav-item active" data-tab="dashboard">
+          <i class="ph-bold ph-squares-four"></i> Dashboard
+        </button>
+        <button class="nav-item" data-tab="appointments">
+          <i class="ph-bold ph-calendar-blank"></i> Appointments
+        </button>
+        <button class="nav-item" data-tab="waitlist">
+          <i class="ph-bold ph-users-three"></i> Smart Waitlist
+        </button>
+        <button class="nav-item" data-tab="about">
+          <i class="ph-bold ph-info"></i> About
+        </button>
+      </nav>
+
+      <div class="header-status">
+        <div class="status-pill" id="backendStatusPill">
+          <span class="status-dot"></span>
+          <span id="backendStatusText">ML Engine Active</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN VIEWPORT WRAPPER -->
+  <main class="main-wrapper">
+
+    <!-- GLOBAL NOTIFICATION & ACTION BANNERS -->
+
+    <!-- CANCELED SLOT REPLACEMENT PROMPT BANNER -->
+    <div id="cancelledSlotBanner" style="display: none; background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <i class="ph-bold ph-calendar-x" style="font-size: 1.4rem; color: #D97706;"></i>
+        <div>
+          <strong id="cancelledSlotTitle">Slot Cancelled: Cardiology — 24 Sep at 10:30 AM</strong><br>
+          <span style="font-size: 0.85rem; color: #78350F;">Replace the slot with a patient from the Smart Waitlist.</span>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" id="btnGoToWaitlistForReplacement" style="background: #D97706; border-color: #B45309;">
+        Go to Smart Waitlist <i class="ph-bold ph-arrow-right"></i>
+      </button>
+    </div>
+
+    <!-- WAITLIST ASSIGNMENT SUCCESS BANNER -->
+    <div id="assignmentSuccessBanner" style="display: none; background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <i class="ph-bold ph-check-circle" style="font-size: 1.4rem; color: #059669;"></i>
+        <div>
+          <strong id="assignmentSuccessText">Slot successfully replaced with Rahul Sharma.</strong><br>
+          <span style="font-size: 0.85rem; color: #047857;">The appointment list and dashboard have been updated with the backfilled slot.</span>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" id="btnViewAppointmentsAfterAssign">
+        View Appointments <i class="ph-bold ph-arrow-right"></i>
+      </button>
+    </div>
+
+    <!-- ERROR BANNER (SHOWN ONLY IF PREDICTION SERVICE IS UNAVAILABLE) -->
+    <div id="serviceErrorBanner" style="display: none; background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; align-items: center; gap: 0.75rem;">
+      <i class="ph-bold ph-warning-circle" style="font-size: 1.3rem;"></i>
+      <div>
+        <strong>Prediction Service Unavailable</strong> — Unable to fetch live ML predictions from backend. Please ensure the backend service is active.
+      </div>
+    </div>
+
+    <!-- 1. DASHBOARD VIEW -->
+    <section id="view-dashboard" class="page-view active">
+      <div class="page-header">
+        <div>
+          <h2>Hospital Scheduling Dashboard</h2>
+          <p>Monitor appointment risk and optimize available capacity.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button class="btn btn-primary btn-sm" id="btnOpenUploadModal">
+            <i class="ph-bold ph-upload-simple"></i> Upload Patient Data
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btnRefreshData">
+            <i class="ph-bold ph-arrows-clockwise"></i> Refresh Live Feed
+          </button>
+        </div>
+      </div>
+
+      <!-- UPLOAD PATIENT DATA SECTION (COLLAPSIBLE / MODAL CARD) -->
+      <div class="card" id="uploadCard" style="display: none; margin-bottom: 1.5rem; background: #F8FAFC; border: 1.5px dashed var(--primary-blue-border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <i class="ph-bold ph-file-csv" style="font-size: 1.4rem; color: var(--primary-blue);"></i>
+            <h3 style="font-family: 'Outfit'; font-size: 1.15rem; font-weight: 700;">Upload Patient & Appointment Data</h3>
+          </div>
+          <button class="close-btn" id="btnCloseUploadCard"><i class="ph-bold ph-x"></i></button>
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+          Upload a <strong>.CSV</strong> or <strong>.XLSX</strong> file containing patient appointment records. Valid records will automatically populate into Appointments and receive real-time ML no-show risk predictions.
+        </p>
+
+        <!-- Drop Zone -->
+        <div id="uploadDropZone" class="upload-dropzone">
+          <input type="file" id="csvFileInput" accept=".csv, .xlsx, .xls" style="display: none;">
+          <i class="ph-bold ph-cloud-arrow-up" style="font-size: 2.5rem; color: var(--primary-blue); margin-bottom: 0.5rem;"></i>
+          <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);">
+            Drag and drop your data file here, or <span style="color: var(--primary-blue); text-decoration: underline; cursor: pointer;" id="btnBrowseFile">browse file</span>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.3rem;">
+            Supported formats: .CSV, .XLSX (Includes auto-column mapping & duplicate protection)
+          </div>
+        </div>
+
+        <!-- Selected File Status Info -->
+        <div id="selectedFileContainer" style="display: none; margin-top: 1rem; background: white; border: 1px solid var(--border-light); padding: 0.85rem 1rem; border-radius: 10px; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <i class="ph-bold ph-file-text" style="font-size: 1.4rem; color: var(--accent-cyan);"></i>
+            <div>
+              <strong id="selectedFileName" style="font-size: 0.9rem;">sample_patient_data.csv</strong>
+              <div id="selectedFileSize" style="font-size: 0.75rem; color: var(--text-muted);">1.2 KB</div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btnProcessUpload">
+            <i class="ph-bold ph-play-circle"></i> Process & Add Records
+          </button>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div id="uploadProgressState" style="display: none; margin-top: 1rem; text-align: center; padding: 1rem;">
+          <div style="font-weight: 600; font-size: 0.9rem; color: var(--primary-blue); margin-bottom: 0.5rem;">
+            <i class="ph-bold ph-spinner spinner-icon"></i> Validating data & calculating ML predictions...
+          </div>
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="uploadProgressBar"></div></div>
+        </div>
+
+        <!-- Validation & Import Summary Card -->
+        <div id="uploadResultsSummary" style="display: none; margin-top: 1rem; background: white; border: 1px solid #A7F3D0; padding: 1.1rem; border-radius: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <span style="font-weight: 700; font-size: 1rem; color: #047857;" id="summaryHeaderTitle">Upload Processing Complete</span>
+            <button class="btn btn-primary btn-sm" id="btnGoToAppointmentsAfterUpload">
+              View Appointments <i class="ph-bold ph-arrow-right"></i>
+            </button>
+          </div>
+          <div class="summary-pills-row">
+            <div class="summary-pill total"><span id="sumTotalCount">0</span> Processed</div>
+            <div class="summary-pill valid"><i class="ph-bold ph-check"></i> <span id="sumValidCount">0</span> Valid & Added</div>
+            <div class="summary-pill duplicate"><i class="ph-bold ph-arrow-bend-down-right"></i> <span id="sumDupCount">0</span> Duplicates Skipped</div>
+            <div class="summary-pill invalid"><i class="ph-bold ph-warning"></i> <span id="sumInvalidCount">0</span> Invalid Skipped</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI CARDS GRID -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-label">Upcoming Appointments</span>
+            <div class="kpi-icon"><i class="ph-bold ph-calendar-check"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiUpcoming">248</div>
+          <div class="kpi-sub"><i class="ph-bold ph-trend-up"></i> Next 7 Days scheduled</div>
+        </div>
+
+        <div class="kpi-card high-risk">
+          <div class="kpi-top">
+            <span class="kpi-label">High-Risk Appointments</span>
+            <div class="kpi-icon"><i class="ph-bold ph-warning"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiHighRisk">34</div>
+          <div class="kpi-sub"><i class="ph-bold ph-warning-circle"></i> Estimated no-show > 60%</div>
+        </div>
+
+        <div class="kpi-card warning">
+          <div class="kpi-top">
+            <span class="kpi-label">Reminder Priority</span>
+            <div class="kpi-icon"><i class="ph-bold ph-bell-ringing"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiReminderPriority">18</div>
+          <div class="kpi-sub"><i class="ph-bold ph-clock"></i> Action recommended today</div>
+        </div>
+
+        <div class="kpi-card cyan">
+          <div class="kpi-top">
+            <span class="kpi-label">Waitlist Patients</span>
+            <div class="kpi-icon"><i class="ph-bold ph-users"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiWaitlist">52</div>
+          <div class="kpi-sub"><i class="ph-bold ph-user-check"></i> Ready for match</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-top">
+            <span class="kpi-label">Available Slots</span>
+            <div class="kpi-icon"><i class="ph-bold ph-clock-afternoon"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiAvailableSlots">12</div>
+          <div class="kpi-sub"><i class="ph-bold ph-check-circle"></i> Open for backfill</div>
+        </div>
+
+        <div class="kpi-card success">
+          <div class="kpi-top">
+            <span class="kpi-label">Potential Capacity Recovered</span>
+            <div class="kpi-icon"><i class="ph-bold ph-shield-check"></i></div>
+          </div>
+          <div class="kpi-value" id="kpiCapacityRecovered">14 Slots</div>
+          <div class="kpi-sub"><i class="ph-bold ph-arrow-circle-up"></i> ~85% recovery rate</div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD MAIN GRID (RISK OVERVIEW + HIGH RISK LIST) -->
+      <div class="dashboard-grid">
+        
+        <!-- Risk Overview Donut Chart -->
+        <div class="card">
+          <div class="table-header-flex">
+            <span class="table-title">Risk Distribution</span>
+          </div>
+          <div class="chart-container">
+            <div class="canvas-wrapper">
+              <canvas id="riskDonutChart"></canvas>
+              <div class="chart-center-text">
+                <div class="total-num" id="donutTotal">248</div>
+                <div class="total-label">Appointments</div>
+              </div>
+            </div>
+            <div class="risk-legend">
+              <div class="legend-item">
+                <div class="legend-val" style="color: var(--risk-low-text);" id="lblLowRiskCount">156</div>
+                <div class="legend-lbl"><span class="legend-dot" style="background: var(--risk-low-text);"></span>Low Risk</div>
+              </div>
+              <div class="legend-item">
+                <div class="legend-val" style="color: var(--risk-med-text);" id="lblMedRiskCount">58</div>
+                <div class="legend-lbl"><span class="legend-dot" style="background: var(--risk-med-text);"></span>Med Risk</div>
+              </div>
+              <div class="legend-item">
+                <div class="legend-val" style="color: var(--risk-high-text);" id="lblHighRiskCount">34</div>
+                <div class="legend-lbl"><span class="legend-dot" style="background: var(--risk-high-text);"></span>High Risk</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appointments Requiring Attention -->
+        <div class="card">
+          <div class="table-header-flex">
+            <span class="table-title">Appointments Requiring Attention</span>
+            <button class="btn btn-secondary btn-sm" onclick="switchTab('appointments')">View All</button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="custom-table" id="dashboardAttentionTable">
+              <thead>
+                <tr>
+                  <th>Appt ID</th>
+                  <th>Patient / Specialty</th>
+                  <th>Date & Time</th>
+                  <th>No-Show Prob</th>
+                  <th>Risk Level</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="dashboardAttentionBody">
+                <!-- Rows injected dynamically via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2. APPOINTMENTS MANAGEMENT VIEW -->
+    <section id="view-appointments" class="page-view">
+      <div class="page-header">
+        <div>
+          <h2>Appointment Risk Management</h2>
+          <p>Filter, search, and analyze predicted no-show probabilities across hospital departments.</p>
+        </div>
+        <div>
+          <button class="btn btn-primary btn-sm" id="btnOpenUploadModalAppts">
+            <i class="ph-bold ph-upload-simple"></i> Upload Patient Data
+          </button>
+        </div>
+      </div>
+
+      <!-- Controls & Filters Bar -->
+      <div class="controls-bar">
+        <div class="search-box">
+          <i class="ph-bold ph-magnifying-glass"></i>
+          <input type="text" id="searchInput" placeholder="Search by Appointment ID, Patient, or Specialty...">
+        </div>
+        <div class="filter-group">
+          <select class="select-control" id="filterSpecialty">
+            <option value="ALL">All Specialties</option>
+            <option value="Cardiology">Cardiology</option>
+            <option value="Neurology">Neurology</option>
+            <option value="Orthopedics">Orthopedics</option>
+            <option value="Dermatology">Dermatology</option>
+            <option value="Endocrinology">Endocrinology</option>
+            <option value="Pediatrics">Pediatrics</option>
+          </select>
+
+          <select class="select-control" id="filterRisk">
+            <option value="ALL">All Risk Levels</option>
+            <option value="HIGH">HIGH Risk Only</option>
+            <option value="MEDIUM">MEDIUM Risk Only</option>
+            <option value="LOW">LOW Risk Only</option>
+          </select>
+
+          <select class="select-control" id="sortControl">
+            <option value="prob-desc">Sort: Highest Risk First</option>
+            <option value="prob-asc">Sort: Lowest Risk First</option>
+            <option value="date-asc">Sort: Date (Earliest First)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Full Appointments Table -->
+      <div class="card">
+        <div style="overflow-x: auto;">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Appt ID</th>
+                <th>Patient Name</th>
+                <th>Specialty</th>
+                <th>Date & Time</th>
+                <th>Lead Time</th>
+                <th>Prev No-Shows</th>
+                <th>Reminder Status</th>
+                <th>No-Show Prob</th>
+                <th>Risk Badge</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="fullAppointmentsBody">
+              <!-- Rows injected dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. SMART WAITLIST PAGE -->
+    <section id="view-waitlist" class="page-view">
+      <div class="page-header">
+        <div>
+          <h2>Smart Waitlist & Capacity Recovery</h2>
+          <p>Match actually available slots with compatible, waiting patients.</p>
+        </div>
+      </div>
+
+      <!-- Available Slot Banner Card -->
+      <div class="slot-banner">
+        <div>
+          <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; font-weight: 600;">Slot Status: <span class="badge badge-low">AVAILABLE</span></div>
+          <h3 style="font-family: 'Outfit'; font-size: 1.4rem; margin-top: 0.2rem;">Open Cardiology Appointment Slot</h3>
+        </div>
+        <div class="slot-info-group">
+          <div class="slot-field">
+            <label>Specialty</label>
+            <span id="slotSpecialty">Cardiology</span>
+          </div>
+          <div class="slot-field">
+            <label>Date</label>
+            <span id="slotDate">24 Sep 2026</span>
+          </div>
+          <div class="slot-field">
+            <label>Time Slot</label>
+            <span id="slotTime">10:30 AM</span>
+          </div>
+        </div>
+        <div>
+          <button class="btn btn-secondary btn-sm" id="btnSimulateSlot">
+            <i class="ph-bold ph-arrows-clockwise"></i> Switch Test Slot
+          </button>
+        </div>
+      </div>
+
+      <!-- Compatible Waitlist Candidates Grid & Transparent Explainer -->
+      <div class="dashboard-grid">
+        <div>
+          <h3 style="font-size: 1.1rem; margin-bottom: 1rem; font-weight: 700;">Ranked Compatible Candidates</h3>
+          <div class="candidates-grid" id="candidatesGrid">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+        <!-- Transparent Explainer Side Panel -->
+        <div class="card" id="explanationPanel">
+          <div class="table-header-flex">
+            <span class="table-title">Why this patient was recommended</span>
+            <span class="badge badge-blue">Matching Engine v1.2</span>
+          </div>
+
+          <div id="explanationContent">
+            <div style="text-align: center; color: var(--text-muted); padding: 2rem 0;">
+              Select a candidate from the left to view transparent recommendation logic.
+            </div>
+          </div>
+
+          <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-light); font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+            <i class="ph-bold ph-info" style="color: var(--primary-blue); font-size: 1rem;"></i>
+            <span>Final scheduling decision remains with hospital staff. AI provides decision support only.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. ABOUT SECTION VIEW (REFRAMING CAPACITY WORKFLOW DATA) -->
+    <section id="view-about" class="page-view">
+      <div class="page-header">
+        <div>
+          <h2>About AuraCare Predictor</h2>
+          <p>System Overview & End-to-End Operational Capacity Recovery Pipeline</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 1.5rem;">
+        <div style="max-width: 900px; margin: 0 auto; line-height: 1.7;">
+          <h3 style="font-family: 'Outfit'; font-size: 1.35rem; margin-bottom: 0.5rem; color: var(--primary-blue);">
+            AI-Assisted Scheduling Decision Support
+          </h3>
+          <p style="color: var(--text-secondary); margin-bottom: 1.25rem;">
+            <strong>AuraCare Predictor</strong> provides operational decision support for hospital scheduling staff. The system bridges machine learning risk prediction with real-time waitlist matching to ensure empty slots are rapidly backfilled with compatible patients.
+          </p>
+
+          <div style="background: var(--primary-blue-light); border: 1px solid var(--primary-blue-border); padding: 1.1rem 1.35rem; border-radius: var(--radius-sm); margin-bottom: 1.75rem; display: flex; align-items: center; gap: 1rem;">
+            <i class="ph-bold ph-shield-check" style="font-size: 1.6rem; color: var(--primary-blue);"></i>
+            <div style="font-size: 0.88rem; color: var(--text-main);">
+              <strong>Human-in-the-Loop Principle:</strong> The system does NOT automatically cancel appointments or alter patient care priorities. All scheduling recommendations require human staff verification.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Capacity Recovery Operational Pipeline Data -->
+      <div class="card">
+        <h3 style="font-family: 'Outfit'; font-size: 1.2rem; font-weight: 700; margin-bottom: 1.25rem; color: var(--text-main);">
+          End-to-End Operational Capacity Recovery Workflow
+        </h3>
+
+        <div class="workflow-pipeline">
+          
+          <div class="workflow-node">
+            <div class="node-left">
+              <div class="node-number">1</div>
+              <div>
+                <div class="node-title">Potentially At-Risk Appointment</div>
+                <div class="node-desc">ML model evaluates upcoming schedule and predicts no-show risk score based on historical indicators.</div>
+              </div>
+            </div>
+            <span class="state-badge state-predicted">Predicted State</span>
+          </div>
+
+          <div class="workflow-node">
+            <div class="node-left">
+              <div class="node-number">2</div>
+              <div>
+                <div class="node-title">Reminder Priority</div>
+                <div class="node-desc">Staff prioritizes targeted SMS / phone outreach for appointments exceeding 60% probability.</div>
+              </div>
+            </div>
+            <span class="state-badge state-predicted">Operational Priority</span>
+          </div>
+
+          <div class="workflow-node" style="border-color: var(--primary-blue); background: var(--primary-blue-light);">
+            <div class="node-left">
+              <div class="node-number" style="background: var(--primary-blue); color: white;">3</div>
+              <div>
+                <div class="node-title" style="color: var(--primary-blue);">Slot Actually Becomes Available</div>
+                <div class="node-desc">Patient calls to cancel or explicit cancellation confirmed by staff. (Distinct from risk prediction).</div>
+              </div>
+            </div>
+            <span class="state-badge state-confirmed">Confirmed Event</span>
+          </div>
+
+          <div class="workflow-node">
+            <div class="node-left">
+              <div class="node-number">4</div>
+              <div>
+                <div class="node-title">Search Waitlist</div>
+                <div class="node-desc">System indexes waiting patients matching department and slot constraints.</div>
+              </div>
+            </div>
+            <span class="state-badge state-confirmed">Automated Query</span>
+          </div>
+
+          <div class="workflow-node">
+            <div class="node-left">
+              <div class="node-number">5</div>
+              <div>
+                <div class="node-title">Filter Compatible Patients</div>
+                <div class="node-desc">Filters candidate waitlist by medical specialty, preferred timeslot, and notice required.</div>
+              </div>
+            </div>
+            <span class="state-badge state-confirmed">Rule Filtering</span>
+          </div>
+
+          <div class="workflow-node">
+            <div class="node-left">
+              <div class="node-number">6</div>
+              <div>
+                <div class="node-title">Rank Candidates</div>
+                <div class="node-desc">Ranks compatible patients by scheduling priority score and waiting duration.</div>
+              </div>
+            </div>
+            <span class="state-badge state-confirmed">Ranking Engine</span>
+          </div>
+
+          <div class="workflow-node">
+            <div class="node-left">
+              <div class="node-number">7</div>
+              <div>
+                <div class="node-title">Scheduling Recommendation</div>
+                <div class="node-desc">Displays top candidate with transparent matching reasons for scheduling staff review.</div>
+              </div>
+            </div>
+            <span class="state-badge state-confirmed">Decision Support</span>
+          </div>
+
+          <div class="workflow-node" style="border-color: var(--risk-low-border); background: var(--risk-low-bg);">
+            <div class="node-left">
+              <div class="node-number" style="background: var(--risk-low-text); color: white;">8</div>
+              <div>
+                <div class="node-title" style="color: var(--risk-low-text);">Capacity Recovered</div>
+                <div class="node-desc">Hospital staff approves match; appointment backfilled and capacity utilization restored.</div>
+              </div>
+            </div>
+            <span class="state-badge state-confirmed">Outcome Achieved</span>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- APPOINTMENT DETAIL INSPECTOR DRAWER (LIGHT THEMED) -->
+  <div class="drawer-backdrop" id="drawerBackdrop">
+    <div class="drawer-panel">
+      <div class="drawer-header">
+        <div>
+          <span class="badge badge-blue" id="drawerApptId">APT-1042</span>
+          <h3 id="drawerPatientName" style="margin-top: 0.2rem; color: #0F172A;">Eleanor Vance</h3>
+        </div>
+        <button class="close-btn" id="btnCloseDrawer"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <div class="drawer-body" id="drawerBody">
+        <!-- Injected dynamically via app.js with light theme -->
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- FOOTER DECLARATION -->
+  <footer class="app-footer">
+    AI-assisted scheduling decision support — Final scheduling decisions remain with hospital staff.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

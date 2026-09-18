@@ -1,0 +1,26 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Virtual environments
+venv/
+.env/
+env/
+ENV/
+
+# Large datasets and raw files (optional to exclude if needed, but Kaggle dataset is ~10MB)
+# KaggleV2-May-2016.csv
+
+# IDEs & Editors
+.vscode/
+.idea/
+.gemini/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
