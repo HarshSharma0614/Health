@@ -282,11 +282,18 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
 
+    def do_HEAD(self):
+        self.do_GET()
+
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
-        if path == '/api/health':
+        if path == '/favicon.ico':
+            self.send_response(204)
+            self.end_headers()
+            return
+        elif path == '/api/health':
             self.send_json_response({
                 "status": "healthy",
                 "service": "Hospital No-Show & Waitlist Decision Support API",

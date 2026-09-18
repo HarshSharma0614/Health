@@ -2,9 +2,14 @@ services:
   - type: web
     name: auracare-hospital-dashboard
     runtime: python
+    branch: main
+    plan: free
     buildCommand: ""
     startCommand: "python frontend-new/server.py"
-    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
     envVars:
       - key: PORT
         value: 10000
+      - key: PYTHON_VERSION
+        value: 3.11.9
