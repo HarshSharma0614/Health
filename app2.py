@@ -13,9 +13,10 @@ app = FastAPI(
 # ==========================================
 # 1. GLOBAL VARIABLES & PATHS
 # ==========================================
-MODEL_PATH = r"D:\Desktop\BootCamp_Hackathon\models\noshow_model_rf.joblib"
-THRESHOLD_PATH = r"D:\Desktop\BootCamp_Hackathon\models\threshold.txt"
-WAITLIST_PATH = r"D:\Desktop\BootCamp_Hackathon\data\synthetic\waitlist.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "models", "noshow_model_rf.joblib")
+THRESHOLD_PATH = os.path.join(BASE_DIR, "models", "threshold.txt")
+WAITLIST_PATH = os.path.join(BASE_DIR, "data", "synthetic", "waitlist.csv")
 
 model_pipeline = None
 base_threshold = 0.45

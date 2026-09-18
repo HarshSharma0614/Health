@@ -19,10 +19,11 @@ app.add_middleware(
 print("Loading model and data...")
 
 try:
-    # Use exact paths based on your Windows structure
-    MODEL_PATH = r"D:\Desktop\BootCamp_Hackathon\models\noshow_model_rf.joblib"
-    DATA_PATH = r"D:\Desktop\BootCamp_Hackathon\data\processed\cleaned_appointments.csv"
-    WAITLIST_PATH = r"D:\Desktop\BootCamp_Hackathon\data\synthetic\waitlist.csv"
+    import os
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    MODEL_PATH = os.path.join(BASE_DIR, "models", "noshow_model_rf.joblib")
+    DATA_PATH = os.path.join(BASE_DIR, "data", "processed", "cleaned_appointments.csv")
+    WAITLIST_PATH = os.path.join(BASE_DIR, "data", "synthetic", "waitlist.csv")
 
     pipeline = joblib.load(MODEL_PATH)
     

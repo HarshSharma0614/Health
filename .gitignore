@@ -1,28 +1,30 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-*.pyc
-
-# Virtual environments
+# Virtual Environments
 venv/
-.env/
 env/
-ENV/
+.env/
+.venv/
 
-# Large datasets and raw files (optional to exclude if needed, but Kaggle dataset is ~10MB)
-# KaggleV2-May-2016.csv
+# Cache Files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
 
-# IDEs & Editors
+# Large Datasets / CSVs
+*.csv
+data/
+!data/synthetic/
+
+# IDEs and OS Files
 .vscode/
 .idea/
-.gemini/
-*.swp
-*.swo
-
-# OS files
 .DS_Store
 Thumbs.db
-desktop.ini
 
-BootCamp_Hackathon_Complete.zip
+# Secrets & Private Configs
+.env
+secret.json
+credentials.json
+*.pem
+*.key

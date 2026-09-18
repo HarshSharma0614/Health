@@ -26,7 +26,8 @@ def create_waitlist():
     
     df_waitlist = pd.DataFrame(data)
     
-    save_dir = r"D:\Desktop\BootCamp_Hackathon\data\synthetic"
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    save_dir = os.path.join(base_dir, "data", "synthetic")
     os.makedirs(save_dir, exist_ok=True)
     
     save_path = os.path.join(save_dir, "waitlist.csv")

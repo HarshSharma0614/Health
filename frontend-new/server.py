@@ -325,7 +325,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                         "SMS_received": 1 if "Sent" in apt.get("reminder_status", "") else 0
                     }
                     req = urllib.request.Request(
-                        'http://localhost:8000/api/predict',
+                        'http://127.0.0.1:8000/api/predict',
                         data=json.dumps(payload).encode('utf-8'),
                         headers={'Content-Type': 'application/json'}
                     )
@@ -377,7 +377,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                     "SMS_received": 1 if body.get("reminder_status") == "Sent" else 0
                 }
                 req = urllib.request.Request(
-                    'http://localhost:8000/api/predict',
+                    'http://127.0.0.1:8000/api/predict',
                     data=json.dumps(payload).encode('utf-8'),
                     headers={'Content-Type': 'application/json'}
                 )
@@ -424,7 +424,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             }
             try:
                 req = urllib.request.Request(
-                    'http://localhost:8000/api/waitlist/match',
+                    'http://127.0.0.1:8000/api/waitlist/match',
                     data=json.dumps(payload).encode('utf-8'),
                     headers={'Content-Type': 'application/json'}
                 )
@@ -517,7 +517,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                         "SMS_received": 1 if reminder == "Sent" else 0
                     }
                     req = urllib.request.Request(
-                        'http://localhost:8000/api/predict',
+                        'http://127.0.0.1:8000/api/predict',
                         data=json.dumps(payload).encode('utf-8'),
                         headers={'Content-Type': 'application/json'}
                     )

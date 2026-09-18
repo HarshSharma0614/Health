@@ -11,9 +11,11 @@ st.set_page_config(page_title="Smart Scheduler UI", layout="wide")
 # @st.cache_resource makes sure it only loads once and runs super fast!
 @st.cache_resource
 def load_assets():
-    MODEL_PATH = r"D:\Desktop\BootCamp_Hackathon\models\noshow_model_rf.joblib"
-    DATA_PATH = r"D:\Desktop\BootCamp_Hackathon\data\processed\cleaned_appointments.csv"
-    WAITLIST_PATH = r"D:\Desktop\BootCamp_Hackathon\data\synthetic\waitlist.csv"
+    import os
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    MODEL_PATH = os.path.join(BASE_DIR, "models", "noshow_model_rf.joblib")
+    DATA_PATH = os.path.join(BASE_DIR, "data", "processed", "cleaned_appointments.csv")
+    WAITLIST_PATH = os.path.join(BASE_DIR, "data", "synthetic", "waitlist.csv")
 
     # Load Model Pipeline
     model = joblib.load(MODEL_PATH)
