@@ -663,7 +663,8 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(json_str.encode('utf-8'))
 
 if __name__ == '__main__':
-    print(f"Starting Hospital Scheduling Server on http://localhost:{PORT}")
+    print(f"Starting Hospital Scheduling Server on http://0.0.0.0:{PORT}")
+    socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("", PORT), CustomHandler) as httpd:
         try:
             httpd.serve_forever()
